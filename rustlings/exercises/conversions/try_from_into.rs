@@ -12,8 +12,6 @@ struct Color {
     blue: u8,
 }
 
-// I AM NOT DONE
-
 // Your task is to complete this implementation
 // and return an Ok result of inner type Color.
 // You need to create an implementation for a tuple of three integers,
@@ -23,22 +21,61 @@ struct Color {
 // but the slice implementation needs to check the slice length!
 // Also note that correct RGB color values must be integers in the 0..=255 range.
 
+static min: i16 = 0;
+static max: i16 = 255i16;
+
+#[derive(Debug)]
+struct MyError;
+
+impl std::fmt::Display for MyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "out of bound")
+    }
+}
+
+impl error::Error for MyError {}
+
+macro_rules! from {
+    ($red:expr, $green:expr, $blue:expr) => {
+        if $red < min || $red > max || $green < min || $green > max || $blue < min || $blue > max {
+            Err(Box::new(MyError))
+        } else {
+            Ok(Color {
+                red: $red as u8,
+                green: $green as u8,
+                blue: $blue as u8,
+            })
+        }
+    };
+}
+
 // Tuple implementation
 impl TryFrom<(i16, i16, i16)> for Color {
     type Error = Box<dyn error::Error>;
-    fn try_from(tuple: (i16, i16, i16)) -> Result<Self, Self::Error> {}
+    fn try_from(tuple: (i16, i16, i16)) -> Result<Self, Self::Error> {
+        let (red, green, blue) = tuple;
+        from!(red, green, blue)
+    }
 }
 
 // Array implementation
 impl TryFrom<[i16; 3]> for Color {
     type Error = Box<dyn error::Error>;
-    fn try_from(arr: [i16; 3]) -> Result<Self, Self::Error> {}
+    fn try_from(arr: [i16; 3]) -> Result<Self, Self::Error> {
+        let [red, green, blue] = arr;
+        from!(red, green, blue)
+    }
 }
 
 // Slice implementation
 impl TryFrom<&[i16]> for Color {
     type Error = Box<dyn error::Error>;
-    fn try_from(slice: &[i16]) -> Result<Self, Self::Error> {}
+    fn try_from(slice: &[i16]) -> Result<Self, Self::Error> {
+        if slice.len() != 3 {
+            return Err(Box::new(MyError));
+        }
+        from!(slice[0], slice[1], slice[2])
+    }
 }
 
 fn main() {
