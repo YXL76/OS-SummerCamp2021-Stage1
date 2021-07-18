@@ -2,7 +2,7 @@ mod context;
 mod switch;
 mod task;
 
-use crate::config::MAX_APP_NUM;
+use crate::config::{BIG_STRIDE, DEFAULT_PRIO, MAX_APP_NUM};
 use crate::loader::{get_num_app, init_app_cx};
 use core::cell::RefCell;
 use lazy_static::*;
@@ -29,6 +29,8 @@ lazy_static! {
         let mut tasks = [TaskControlBlock {
             task_cx_ptr: 0,
             task_status: TaskStatus::UnInit,
+            task_pass: BIG_STRIDE / DEFAULT_PRIO,
+            task_stride: 0,
         }; MAX_APP_NUM];
         for i in 0..num_app {
             tasks[i].task_cx_ptr = init_app_cx(i) as *const _ as usize;
@@ -69,9 +71,11 @@ impl TaskManager {
     fn find_next_task(&self) -> Option<usize> {
         let inner = self.inner.borrow();
         let current = inner.current_task;
+        // TODO
         (current + 1..current + self.num_app + 1)
             .map(|id| id % self.num_app)
-            .find(|id| inner.tasks[*id].task_status == TaskStatus::Ready)
+            .filter(|&id| inner.tasks[id].task_status == TaskStatus::Ready)
+            .min_by_key(|&id| inner.tasks[id].task_stride)
     }
 
     fn run_next_task(&self) {
@@ -79,6 +83,7 @@ impl TaskManager {
             let mut inner = self.inner.borrow_mut();
             let current = inner.current_task;
             inner.tasks[next].task_status = TaskStatus::Running;
+            inner.tasks[next].task_stride += inner.tasks[next].task_pass;
             inner.current_task = next;
             let current_task_cx_ptr2 = inner.tasks[current].get_task_cx_ptr2();
             let next_task_cx_ptr2 = inner.tasks[next].get_task_cx_ptr2();
@@ -89,6 +94,13 @@ impl TaskManager {
         } else {
             panic!("All applications completed!");
         }
+    }
+
+    fn set_priority(&self, prio: isize) -> isize {
+        let mut inner = self.inner.borrow_mut();
+        let current = inner.current_task;
+        inner.tasks[current].set_task_pass(prio);
+        prio
     }
 }
 
@@ -106,6 +118,10 @@ fn mark_current_suspended() {
 
 fn mark_current_exited() {
     TASK_MANAGER.mark_current_exited();
+}
+
+pub fn set_priority(prio: isize) -> isize {
+    TASK_MANAGER.set_priority(prio)
 }
 
 pub fn suspend_current_and_run_next() {
