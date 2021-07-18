@@ -12,6 +12,7 @@ mod loader;
 mod sbi;
 mod syscall;
 mod task;
+mod timer;
 mod trap;
 
 use log::info;
@@ -37,6 +38,8 @@ pub fn rust_main() -> ! {
     info!("[kernel] Hello, world!");
     trap::init();
     loader::load_apps();
+    trap::enable_timer_interrupt();
+    timer::set_next_trigger();
     task::run_first_task();
     panic!("Unreachable in rust_main!");
 }
