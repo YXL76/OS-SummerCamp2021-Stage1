@@ -6,10 +6,12 @@
 
 #[macro_use]
 mod console;
-mod batch;
+mod config;
 mod lang_items;
+mod loader;
 mod sbi;
 mod syscall;
+mod task;
 mod trap;
 
 use log::info;
@@ -34,6 +36,7 @@ pub fn rust_main() -> ! {
     console::init();
     info!("[kernel] Hello, world!");
     trap::init();
-    batch::init();
-    batch::run_next_app();
+    loader::load_apps();
+    task::run_first_task();
+    panic!("Unreachable in rust_main!");
 }
