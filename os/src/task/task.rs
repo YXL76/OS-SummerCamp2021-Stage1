@@ -6,6 +6,8 @@ pub struct TaskControlBlock {
     pub task_status: TaskStatus,
     pub task_pass: isize,
     pub task_stride: isize,
+    pub task_lastrun: usize,
+    pub task_duration: usize,
 }
 
 impl TaskControlBlock {
