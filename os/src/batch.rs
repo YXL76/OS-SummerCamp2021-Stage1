@@ -1,6 +1,7 @@
 use crate::trap::TrapContext;
 use core::cell::RefCell;
 use lazy_static::*;
+use log::info;
 
 const USER_STACK_SIZE: usize = 4096;
 const KERNEL_STACK_SIZE: usize = 4096 * 2;
@@ -56,9 +57,9 @@ unsafe impl Sync for AppManager {}
 
 impl AppManagerInner {
     pub fn print_app_info(&self) {
-        println!("[kernel] num_app = {}", self.num_app);
+        info!("[kernel] num_app = {}", self.num_app);
         for i in 0..self.num_app {
-            println!(
+            info!(
                 "[kernel] app_{} [{:#x}, {:#x})",
                 i,
                 self.app_start[i],
@@ -71,7 +72,7 @@ impl AppManagerInner {
         if app_id >= self.num_app {
             panic!("All applications completed!");
         }
-        println!("[kernel] Loading app_{}", app_id);
+        info!("[kernel] Loading app_{}", app_id);
         // clear icache
         llvm_asm!("fence.i" :::: "volatile");
         // clear app area
