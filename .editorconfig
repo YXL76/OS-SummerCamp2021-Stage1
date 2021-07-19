@@ -8,6 +8,12 @@ indent_style = space
 end_of_line = lf
 charset = utf-8
 
+[*.py]
+indent_size = 4
+
 [*.rs]
 insert_final_newfile = true
 indent_size = 4
+
+[Makefile]
+indent_style = tab
