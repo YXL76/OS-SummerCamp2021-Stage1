@@ -56,6 +56,7 @@ impl TaskManager {
             let mut inner = self.inner.borrow_mut();
             inner.tasks[0].task_status = TaskStatus::Running;
             inner.tasks[0].task_lastrun = get_time();
+            inner.tasks[0].task_stride += inner.tasks[0].task_pass;
             inner.tasks[0].get_task_cx_ptr2()
         };
         let _unused: usize = 0;
