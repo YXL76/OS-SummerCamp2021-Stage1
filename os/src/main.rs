@@ -6,12 +6,18 @@
 
 #[macro_use]
 mod console;
+mod batch;
 mod lang_items;
 mod sbi;
+mod syscall;
+mod trap;
+
+use log::info;
 
 use log::{debug, error, info, trace, warn};
 
 global_asm!(include_str!("entry.asm"));
+global_asm!(include_str!("link_app.S"));
 
 fn clear_bss() {
     extern "C" {
@@ -40,28 +46,8 @@ pub fn rust_main() -> ! {
     }
     clear_bss();
     console::init();
-    error!("hello world");
-    warn!("hello world");
-    info!("hello world");
-    debug!("hello world");
-    trace!("hello world");
-
-    let stext = stext as usize;
-    let etext = etext as usize;
-    let srodata = srodata as usize;
-    let erodata = erodata as usize;
-    let sdata = sdata as usize;
-    let edata = edata as usize;
-    let boot_stack = boot_stack as usize;
-    let boot_stack_top = boot_stack_top as usize;
-    let sbss = sbss as usize;
-    let ebss = ebss as usize;
-
-    info!(".text [{:#x}, {:#x})", stext, etext);
-    info!(".rodata [{:#x}, {:#x})", srodata, erodata);
-    info!(".data [{:#x}, {:#x})", sdata, edata);
-    info!("boot_stack [{:#x}, {:#x})", boot_stack, boot_stack_top);
-    info!(".bss [{:#x}, {:#x})", sbss, ebss);
-
-    panic!("Shutdown machine!");
+    info!("[kernel] Hello, world!");
+    trap::init();
+    batch::init();
+    batch::run_next_app();
 }
