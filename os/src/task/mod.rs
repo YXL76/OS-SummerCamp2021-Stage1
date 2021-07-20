@@ -116,7 +116,9 @@ impl TaskManager {
         prio
     }
 }
-
+pub fn current_task() -> usize {
+    TASK_MANAGER.inner.borrow().current_task
+}
 pub fn run_first_task() {
     TASK_MANAGER.run_first_task();
 }

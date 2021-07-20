@@ -93,3 +93,12 @@ pub fn init_app_cx(app_id: usize) -> &'static TaskContext {
         TaskContext::goto_restore(),
     )
 }
+
+pub fn check_buf(app_id: usize, addr: usize, len: usize) -> bool {
+    let sp = USER_STACK[app_id].get_sp();
+    let base_i = get_base_i(app_id);
+    // in user stack
+    (addr + len <= sp && addr + USER_STACK_SIZE >= sp)
+        // in app space
+        || (addr >= base_i && addr + len <= base_i + APP_SIZE_LIMIT)
+}
