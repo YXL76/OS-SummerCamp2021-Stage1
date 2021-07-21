@@ -1,3 +1,4 @@
+use std::env;
 use std::fs::{read_dir, File};
 use std::io::{Result, Write};
 
@@ -18,6 +19,16 @@ fn insert_app_data() -> Result<()> {
             let mut name_with_ext = dir_entry.unwrap().file_name().into_string().unwrap();
             name_with_ext.drain(name_with_ext.find('.').unwrap()..name_with_ext.len());
             name_with_ext
+        })
+        .filter(|name_with_ext| match env::var("CHAPTER") {
+            Ok(x) if x == "3_1" => name_with_ext.starts_with("ch3_1_"),
+            Ok(x) if x == "3_2" => name_with_ext.starts_with("ch3_2_"),
+            _ => {
+                name_with_ext.starts_with("ch3_0_")
+                    || name_with_ext.starts_with("ch3t_")
+                    || name_with_ext.starts_with("ch2_")
+                    || name_with_ext.starts_with("ch2t_")
+            }
         })
         .collect();
     apps.sort();
