@@ -44,10 +44,10 @@ $(KERNEL_BIN): kernel
 	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@
 
 kernel:
-	@cd ../user && make all CHAPTER=$(CHAPTER)
+	@cd ../user && make all CHAPTER=4_only
 	@echo Platform: $(BOARD)
 	@cp src/linker-$(BOARD).ld src/linker.ld
-	@CHAPTER=$(CHAPTER) cargo build --release
+	@cargo build --release
 	@rm src/linker.ld
 
 clean:

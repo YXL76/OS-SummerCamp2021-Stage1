@@ -2,12 +2,12 @@ mod context;
 mod switch;
 mod task;
 
-use crate::config::{BIG_STRIDE, CLOCK_FREQ, DEFAULT_PRIO, MAX_APP_NUM};
-use crate::loader::{get_num_app, init_app_cx};
-use crate::timer::get_time;
+use crate::loader::{get_app_data, get_num_app};
+use crate::mm::MapPermission;
+use crate::trap::TrapContext;
+use alloc::vec::Vec;
 use core::cell::RefCell;
-use lazy_static::*;
-use log::info;
+use lazy_static::lazy_static;
 use switch::__switch;
 use task::{TaskControlBlock, TaskStatus};
 
@@ -19,7 +19,7 @@ pub struct TaskManager {
 }
 
 struct TaskManagerInner {
-    tasks: [TaskControlBlock; MAX_APP_NUM],
+    tasks: Vec<TaskControlBlock>,
     current_task: usize,
 }
 
@@ -27,18 +27,12 @@ unsafe impl Sync for TaskManager {}
 
 lazy_static! {
     pub static ref TASK_MANAGER: TaskManager = {
+        info!("init TASK_MANAGER");
         let num_app = get_num_app();
-        let mut tasks = [TaskControlBlock {
-            task_cx_ptr: 0,
-            task_status: TaskStatus::UnInit,
-            task_pass: BIG_STRIDE / DEFAULT_PRIO,
-            task_stride: 0,
-            task_lastrun: 0,
-            task_duration: 0,
-        }; MAX_APP_NUM];
+        info!("num_app = {}", num_app);
+        let mut tasks: Vec<TaskControlBlock> = Vec::new();
         for i in 0..num_app {
-            tasks[i].task_cx_ptr = init_app_cx(i) as *const _ as usize;
-            tasks[i].task_status = TaskStatus::Ready;
+            tasks.push(TaskControlBlock::new(get_app_data(i), i));
         }
         TaskManager {
             num_app,
@@ -55,10 +49,10 @@ impl TaskManager {
         let next_task_cx_ptr2 = {
             let mut inner = self.inner.borrow_mut();
             inner.tasks[0].task_status = TaskStatus::Running;
-            inner.tasks[0].task_lastrun = get_time();
             inner.tasks[0].task_stride += inner.tasks[0].task_pass;
             inner.tasks[0].get_task_cx_ptr2()
         };
+
         let _unused: usize = 0;
         unsafe {
             __switch(&_unused as *const _, next_task_cx_ptr2);
@@ -68,13 +62,7 @@ impl TaskManager {
     fn mark_current_suspended(&self) {
         let mut inner = self.inner.borrow_mut();
         let current = inner.current_task;
-        inner.tasks[current].task_duration += get_time() - inner.tasks[current].task_lastrun;
-        if inner.tasks[current].task_duration > 5 * CLOCK_FREQ {
-            inner.tasks[current].task_status = TaskStatus::Exited;
-            info!("[kernel] Application exited with code 62");
-        } else {
-            inner.tasks[current].task_status = TaskStatus::Ready;
-        }
+        inner.tasks[current].task_status = TaskStatus::Ready;
     }
 
     fn mark_current_exited(&self) {
@@ -90,12 +78,23 @@ impl TaskManager {
             .min_by_key(|&id| inner.tasks[id].task_stride)
     }
 
+    fn get_current_token(&self) -> usize {
+        let inner = self.inner.borrow();
+        let current = inner.current_task;
+        inner.tasks[current].get_user_token()
+    }
+
+    fn get_current_trap_cx(&self) -> &mut TrapContext {
+        let inner = self.inner.borrow();
+        let current = inner.current_task;
+        inner.tasks[current].get_trap_cx()
+    }
+
     fn run_next_task(&self) {
         if let Some(next) = self.find_next_task() {
             let mut inner = self.inner.borrow_mut();
             let current = inner.current_task;
             inner.tasks[next].task_status = TaskStatus::Running;
-            inner.tasks[next].task_lastrun = get_time();
             inner.tasks[next].task_stride += inner.tasks[next].task_pass;
             inner.current_task = next;
             let current_task_cx_ptr2 = inner.tasks[current].get_task_cx_ptr2();
@@ -115,10 +114,41 @@ impl TaskManager {
         inner.tasks[current].set_task_pass(prio);
         prio
     }
+
+    fn mmap(&self, start: usize, len: usize, port: usize) -> isize {
+        if (port & !0x7 != 0) || (port & 0x7 == 0) || (start & 0x111 != 0) {
+            return -1;
+        }
+        let mut inner = self.inner.borrow_mut();
+        let current = inner.current_task;
+        if inner.tasks[current].memory_set.insert_framed_area(
+            start.into(),
+            (start + len).into(),
+            MapPermission::from_bits((port << 1) as u8).unwrap() | MapPermission::U,
+        ) {
+            ((len - 1 + 4096) / 4096 * 4096) as isize
+        } else {
+            -1
+        }
+    }
+
+    fn munmap(&self, start: usize, len: usize) -> isize {
+        if (start & 0x111 != 0) || (len & 0x111 != 0) {
+            return -1;
+        }
+        let mut inner = self.inner.borrow_mut();
+        let current = inner.current_task;
+        if inner.tasks[current]
+            .memory_set
+            .remove_framed_area(start.into(), (start + len).into())
+        {
+            ((len - 1 + 4096) / 4096 * 4096) as isize
+        } else {
+            -1
+        }
+    }
 }
-pub fn current_task() -> usize {
-    TASK_MANAGER.inner.borrow().current_task
-}
+
 pub fn run_first_task() {
     TASK_MANAGER.run_first_task();
 }
@@ -147,4 +177,20 @@ pub fn suspend_current_and_run_next() {
 pub fn exit_current_and_run_next() {
     mark_current_exited();
     run_next_task();
+}
+
+pub fn current_user_token() -> usize {
+    TASK_MANAGER.get_current_token()
+}
+
+pub fn current_trap_cx() -> &'static mut TrapContext {
+    TASK_MANAGER.get_current_trap_cx()
+}
+
+pub fn mmap(start: usize, len: usize, port: usize) -> isize {
+    TASK_MANAGER.mmap(start, len, port)
+}
+
+pub fn munmap(start: usize, len: usize) -> isize {
+    TASK_MANAGER.munmap(start, len)
 }
