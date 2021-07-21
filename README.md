@@ -9,4 +9,4 @@
 [rCore Tutorial](https://github.com/rcore-os/rCore-Tutorial-v3):
 
 - [报告](./reports)
-- [代码](./os/README.md)
+- [代码](./os)，测试请看[这里](./os/README.md)
