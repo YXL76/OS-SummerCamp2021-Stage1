@@ -21,10 +21,14 @@ fn insert_app_data() -> Result<()> {
             name_with_ext
         })
         .filter(|name_with_ext| match env::var("CHAPTER") {
-            Ok(x) if x == "2_bad" => {
-                name_with_ext.starts_with("_ch2_") || name_with_ext.starts_with("_ch2t_")
+            Ok(x) if x == "3_1" => name_with_ext.starts_with("ch3_1_"),
+            Ok(x) if x == "3_2" => name_with_ext.starts_with("ch3_2_"),
+            _ => {
+                name_with_ext.starts_with("ch3_0_")
+                    || name_with_ext.starts_with("ch3t_")
+                    || name_with_ext.starts_with("ch2_")
+                    || name_with_ext.starts_with("ch2t_")
             }
-            _ => name_with_ext.starts_with("ch2_") || name_with_ext.starts_with("ch2t_"),
         })
         .collect();
     apps.sort();

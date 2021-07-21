@@ -29,7 +29,7 @@ OBJCOPY := rust-objcopy --binary-architecture=riscv64
 # Disassembly
 DISASM ?= -x
 
-CHAPTER ?= 2
+CHAPTER ?= 3_0
 
 # build: env $(KERNEL_BIN)
 build: $(KERNEL_BIN)
