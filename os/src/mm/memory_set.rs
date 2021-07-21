@@ -72,11 +72,11 @@ impl MemorySet {
     }
 
     pub fn remove_framed_area(&mut self, start_va: VirtAddr, end_va: VirtAddr) -> bool {
-        let start_va = start_va.into();
-        let end_va = end_va.into();
-        for area in self.areas.iter_mut() {
-            if area.vpn_range.get_start() == start_va || area.vpn_range.get_end() == end_va {
+        let range = VPNRange::new(start_va.floor(), end_va.ceil());
+        for (index, area) in self.areas.iter_mut().enumerate() {
+            if area.vpn_range == range {
                 area.unmap(&mut self.page_table);
+                self.areas.remove(index);
                 return true;
             }
         }
