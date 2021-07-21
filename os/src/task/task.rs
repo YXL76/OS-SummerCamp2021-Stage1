@@ -1,11 +1,13 @@
 use super::TaskContext;
-use crate::config::{kernel_stack_position, TRAP_CONTEXT};
+use crate::config::{kernel_stack_position, BIG_STRIDE, DEFAULT_PRIO, TRAP_CONTEXT};
 use crate::mm::{MapPermission, MemorySet, PhysPageNum, VirtAddr, KERNEL_SPACE};
 use crate::trap::{trap_handler, TrapContext};
 
 pub struct TaskControlBlock {
     pub task_cx_ptr: usize,
     pub task_status: TaskStatus,
+    pub task_pass: isize,
+    pub task_stride: isize,
     pub memory_set: MemorySet,
     pub trap_cx_ppn: PhysPageNum,
     pub base_size: usize,
@@ -22,6 +24,10 @@ impl TaskControlBlock {
 
     pub fn get_user_token(&self) -> usize {
         self.memory_set.token()
+    }
+
+    pub fn set_task_pass(&mut self, prio: isize) {
+        self.task_pass = BIG_STRIDE / prio;
     }
 
     pub fn new(elf_data: &[u8], app_id: usize) -> Self {
@@ -47,6 +53,8 @@ impl TaskControlBlock {
         let task_control_block = Self {
             task_cx_ptr: task_cx_ptr as usize,
             task_status,
+            task_pass: BIG_STRIDE / DEFAULT_PRIO,
+            task_stride: 0,
             memory_set,
             trap_cx_ppn,
             base_size: user_sp,

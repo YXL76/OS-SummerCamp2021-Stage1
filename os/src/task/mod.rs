@@ -45,8 +45,13 @@ lazy_static! {
 
 impl TaskManager {
     fn run_first_task(&self) {
-        self.inner.borrow_mut().tasks[0].task_status = TaskStatus::Running;
-        let next_task_cx_ptr2 = self.inner.borrow().tasks[0].get_task_cx_ptr2();
+        let next_task_cx_ptr2 = {
+            let mut inner = self.inner.borrow_mut();
+            inner.tasks[0].task_status = TaskStatus::Running;
+            inner.tasks[0].task_stride += inner.tasks[0].task_pass;
+            inner.tasks[0].get_task_cx_ptr2()
+        };
+
         let _unused: usize = 0;
         unsafe {
             __switch(&_unused as *const _, next_task_cx_ptr2);
@@ -67,10 +72,9 @@ impl TaskManager {
 
     fn find_next_task(&self) -> Option<usize> {
         let inner = self.inner.borrow();
-        let current = inner.current_task;
-        (current + 1..current + self.num_app + 1)
-            .map(|id| id % self.num_app)
-            .find(|id| inner.tasks[*id].task_status == TaskStatus::Ready)
+        (0..self.num_app)
+            .filter(|&id| inner.tasks[id].task_status == TaskStatus::Ready)
+            .min_by_key(|&id| inner.tasks[id].task_stride)
     }
 
     fn get_current_token(&self) -> usize {
@@ -90,6 +94,7 @@ impl TaskManager {
             let mut inner = self.inner.borrow_mut();
             let current = inner.current_task;
             inner.tasks[next].task_status = TaskStatus::Running;
+            inner.tasks[next].task_stride += inner.tasks[next].task_pass;
             inner.current_task = next;
             let current_task_cx_ptr2 = inner.tasks[current].get_task_cx_ptr2();
             let next_task_cx_ptr2 = inner.tasks[next].get_task_cx_ptr2();
@@ -100,6 +105,13 @@ impl TaskManager {
         } else {
             panic!("All applications completed!");
         }
+    }
+
+    fn set_priority(&self, prio: isize) -> isize {
+        let mut inner = self.inner.borrow_mut();
+        let current = inner.current_task;
+        inner.tasks[current].set_task_pass(prio);
+        prio
     }
 }
 
@@ -117,6 +129,10 @@ fn mark_current_suspended() {
 
 fn mark_current_exited() {
     TASK_MANAGER.mark_current_exited();
+}
+
+pub fn set_priority(prio: isize) -> isize {
+    TASK_MANAGER.set_priority(prio)
 }
 
 pub fn suspend_current_and_run_next() {

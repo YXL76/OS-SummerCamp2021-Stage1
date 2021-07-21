@@ -16,6 +16,10 @@ pub const TRAP_CONTEXT: usize = TRAMPOLINE - PAGE_SIZE;
 
 pub const CLOCK_FREQ: usize = 12500000;
 
+pub const BIG_STRIDE: isize = isize::MAX;
+
+pub const DEFAULT_PRIO: isize = 16;
+
 /// Return (bottom, top) of a kernel stack in kernel space.
 pub fn kernel_stack_position(app_id: usize) -> (usize, usize) {
     let top = TRAMPOLINE - app_id * (KERNEL_STACK_SIZE + PAGE_SIZE);
