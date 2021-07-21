@@ -29,6 +29,8 @@ OBJCOPY := rust-objcopy --binary-architecture=riscv64
 # Disassembly
 DISASM ?= -x
 
+CHAPTER ?= 2
+
 # build: env $(KERNEL_BIN)
 build: $(KERNEL_BIN)
 
@@ -42,10 +44,10 @@ $(KERNEL_BIN): kernel
 	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@
 
 kernel:
-	@cd ../user && make build
+	@cd ../user && make all CHAPTER=$(CHAPTER)
 	@echo Platform: $(BOARD)
 	@cp src/linker-$(BOARD).ld src/linker.ld
-	@cargo build --release
+	@CHAPTER=$(CHAPTER) cargo build --release
 	@rm src/linker.ld
 
 clean:
