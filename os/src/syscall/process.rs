@@ -4,6 +4,7 @@ use crate::task::{
     current_user_token, exit_current_and_run_next, set_priority, suspend_current_and_run_next,
 };
 use crate::timer::get_time_us;
+
 pub fn sys_exit(exit_code: i32) -> ! {
     info!("[kernel] Application exited with code {}", exit_code);
     exit_current_and_run_next();

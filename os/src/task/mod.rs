@@ -3,6 +3,7 @@ mod switch;
 mod task;
 
 use crate::loader::{get_app_data, get_num_app};
+use crate::mm::MapPermission;
 use crate::trap::TrapContext;
 use alloc::vec::Vec;
 use core::cell::RefCell;
@@ -113,6 +114,39 @@ impl TaskManager {
         inner.tasks[current].set_task_pass(prio);
         prio
     }
+
+    fn mmap(&self, start: usize, len: usize, port: usize) -> isize {
+        if (port & !0x7 != 0) || (port & 0x7 == 0) || (start & 0x111 != 0) {
+            return -1;
+        }
+        let mut inner = self.inner.borrow_mut();
+        let current = inner.current_task;
+        if inner.tasks[current].memory_set.insert_framed_area(
+            start.into(),
+            (start + len).into(),
+            MapPermission::from_bits((port << 1) as u8).unwrap() | MapPermission::U,
+        ) {
+            ((len - 1 + 4096) / 4096 * 4096) as isize
+        } else {
+            -1
+        }
+    }
+
+    fn munmap(&self, start: usize, len: usize) -> isize {
+        if (start & 0x111 != 0) || (len & 0x111 != 0) {
+            return -1;
+        }
+        let mut inner = self.inner.borrow_mut();
+        let current = inner.current_task;
+        if inner.tasks[current]
+            .memory_set
+            .remove_framed_area(start.into(), (start + len).into())
+        {
+            ((len - 1 + 4096) / 4096 * 4096) as isize
+        } else {
+            -1
+        }
+    }
 }
 
 pub fn run_first_task() {
@@ -151,4 +185,12 @@ pub fn current_user_token() -> usize {
 
 pub fn current_trap_cx() -> &'static mut TrapContext {
     TASK_MANAGER.get_current_trap_cx()
+}
+
+pub fn mmap(start: usize, len: usize, port: usize) -> isize {
+    TASK_MANAGER.mmap(start, len, port)
+}
+
+pub fn munmap(start: usize, len: usize) -> isize {
+    TASK_MANAGER.munmap(start, len)
 }
