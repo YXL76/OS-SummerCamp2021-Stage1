@@ -9,10 +9,4 @@
 [rCore Tutorial](https://github.com/rcore-os/rCore-Tutorial-v3):
 
 - [报告](./reports)
-- [代码](./os)
-
-  `checkout` 到 `chx` 分支测试对应实验的代码。如：
-
-  ```shell
-  git checkout ch1
-  ```
+- [代码](./os/README.md)
