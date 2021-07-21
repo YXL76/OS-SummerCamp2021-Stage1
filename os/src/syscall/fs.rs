@@ -1,9 +1,12 @@
 use crate::mm::translated_byte_buffer;
-use crate::task::current_user_token;
+use crate::task::{check_buf, current_user_token};
 
 const FD_STDOUT: usize = 1;
 
 pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
+    if !check_buf(buf as usize, len) {
+        return -1;
+    }
     match fd {
         FD_STDOUT => {
             let buffers = translated_byte_buffer(current_user_token(), buf, len);
