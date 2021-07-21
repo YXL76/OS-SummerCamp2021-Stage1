@@ -72,11 +72,11 @@ impl MemorySet {
     }
 
     pub fn remove_framed_area(&mut self, start_va: VirtAddr, end_va: VirtAddr) -> bool {
-        let start_va = start_va.into();
-        let end_va = end_va.into();
-        for area in self.areas.iter_mut() {
-            if area.vpn_range.get_start() == start_va || area.vpn_range.get_end() == end_va {
+        let range = VPNRange::new(start_va.floor(), end_va.ceil());
+        for (index, area) in self.areas.iter_mut().enumerate() {
+            if area.vpn_range == range {
                 area.unmap(&mut self.page_table);
+                self.areas.remove(index);
                 return true;
             }
         }
@@ -238,6 +238,15 @@ impl MemorySet {
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.page_table.translate(vpn)
     }
+
+    pub fn check_buf(&self, addr: usize, len: usize) -> bool {
+        for area in self.areas.iter() {
+            if area.check_buf(addr, len) {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 pub struct MapArea {
@@ -326,6 +335,14 @@ impl MapArea {
             }
             current_vpn.step();
         }
+    }
+
+    fn check_buf(&self, addr: usize, len: usize) -> bool {
+        let start: VirtAddr = self.vpn_range.get_start().into();
+        let start: usize = start.into();
+        let end: VirtAddr = self.vpn_range.get_end().into();
+        let end: usize = end.into();
+        (self.map_perm.bits & MapPermission::R.bits > 0) && addr >= start && addr + len < end
     }
 }
 

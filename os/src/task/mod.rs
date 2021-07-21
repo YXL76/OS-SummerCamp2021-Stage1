@@ -147,6 +147,12 @@ impl TaskManager {
             -1
         }
     }
+
+    fn check_buf(&self, addr: usize, len: usize) -> bool {
+        let inner = self.inner.borrow();
+        let current = inner.current_task;
+        inner.tasks[current].memory_set.check_buf(addr, len)
+    }
 }
 
 pub fn run_first_task() {
@@ -193,4 +199,8 @@ pub fn mmap(start: usize, len: usize, port: usize) -> isize {
 
 pub fn munmap(start: usize, len: usize) -> isize {
     TASK_MANAGER.munmap(start, len)
+}
+
+pub fn check_buf(addr: usize, len: usize) -> bool {
+    TASK_MANAGER.check_buf(addr, len)
 }
