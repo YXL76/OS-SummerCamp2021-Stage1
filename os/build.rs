@@ -19,8 +19,14 @@ fn insert_app_data() -> Result<()> {
             name_with_ext.drain(name_with_ext.find('.').unwrap()..name_with_ext.len());
             name_with_ext
         })
-        .filter(|name_with_ext| name_with_ext.starts_with("ch5_"))
+        .filter(|name_with_ext| {
+            name_with_ext.starts_with("ch2_")
+                || name_with_ext.starts_with("ch3_0_")
+                || name_with_ext.starts_with("ch4_")
+                || name_with_ext.starts_with("ch5_")
+        })
         .collect();
+    apps.push(String::from("initproc"));
     apps.sort();
 
     writeln!(
