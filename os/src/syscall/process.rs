@@ -1,6 +1,6 @@
 use crate::config::BIG_STRIDE;
 use crate::loader::get_app_data_by_name;
-use crate::mm::{translated_byte_buffer, translated_refmut, translated_str};
+use crate::mm::{translated_refmut, translated_str};
 use crate::task::{
     add_task, current_task, current_user_token, exit_current_and_run_next, set_priority,
     suspend_current_and_run_next,
@@ -19,14 +19,11 @@ pub fn sys_yield() -> isize {
     0
 }
 
-pub fn sys_get_time(ts: *const u8, _tz: usize) -> isize {
-    let ts =
-        translated_byte_buffer(current_user_token(), ts, 1)[0].as_ptr() as *const _ as *mut TimeVal;
+pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
+    let ts = translated_refmut(current_user_token(), ts);
     let usec = get_time_us();
-    unsafe {
-        (*ts).sec = usec / 1000000;
-        (*ts).usec = usec % 1000000;
-    }
+    ts.sec = usec / 1000000;
+    ts.usec = usec % 1000000;
     0
 }
 
