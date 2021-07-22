@@ -48,6 +48,7 @@ impl StackFrameAllocator {
     pub fn init(&mut self, l: PhysPageNum, r: PhysPageNum) {
         self.current = l.0;
         self.end = r.0;
+        info!("last {} Physical Frames.", self.end - self.current);
     }
 }
 
@@ -112,20 +113,19 @@ fn frame_dealloc(ppn: PhysPageNum) {
     FRAME_ALLOCATOR.lock().dealloc(ppn);
 }
 
-#[allow(unused)]
 pub fn frame_allocator_test() {
     let mut v: Vec<FrameTracker> = Vec::new();
-    for i in 0..5 {
+    for _ in 0..5 {
         let frame = frame_alloc().unwrap();
-        println!("{:?}", frame);
+        debug!("{:?}", frame);
         v.push(frame);
     }
     v.clear();
-    for i in 0..5 {
+    for _ in 0..5 {
         let frame = frame_alloc().unwrap();
-        println!("{:?}", frame);
+        debug!("{:?}", frame);
         v.push(frame);
     }
     drop(v);
-    println!("frame_allocator_test passed!");
+    debug!("frame_allocator_test passed!");
 }

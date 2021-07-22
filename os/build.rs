@@ -19,7 +19,7 @@ fn insert_app_data() -> Result<()> {
             name_with_ext.drain(name_with_ext.find('.').unwrap()..name_with_ext.len());
             name_with_ext
         })
-        .filter(|name_with_ext| name_with_ext.starts_with("ch4_"))
+        .filter(|name_with_ext| name_with_ext.starts_with("ch5_"))
         .collect();
     apps.sort();
 
@@ -38,6 +38,16 @@ _num_app:
         writeln!(f, r#"    .quad app_{}_start"#, i)?;
     }
     writeln!(f, r#"    .quad app_{}_end"#, apps.len() - 1)?;
+
+    writeln!(
+        f,
+        r#"
+    .global _app_names
+_app_names:"#
+    )?;
+    for app in apps.iter() {
+        writeln!(f, r#"    .string "{}""#, app)?;
+    }
 
     for (idx, app) in apps.iter().enumerate() {
         println!("app_{}: {}", idx, app);

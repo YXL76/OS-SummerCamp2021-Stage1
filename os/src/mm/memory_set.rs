@@ -75,18 +75,39 @@ impl MemorySet {
         }
     }
 
+    pub fn remove_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) -> isize {
+        if let Some((idx, area)) = self
+            .areas
+            .iter_mut()
+            .enumerate()
+            .find(|(_, area)| area.vpn_range.get_start() == start_vpn)
+        {
+            let start_vpn = area.vpn_range.get_start();
+            let end_vpn = area.vpn_range.get_end();
+            area.unmap(&mut self.page_table);
+            self.areas.remove(idx);
+            ((end_vpn.0 - start_vpn.0) * PAGE_SIZE) as isize
+        } else {
+            -1
+        }
+    }
+
     pub fn remove_framed_area(&mut self, start_va: VirtAddr, end_va: VirtAddr) -> isize {
         let start_vpn = start_va.floor();
         let end_vpn = end_va.ceil();
         let range = VPNRange::new(start_vpn, end_vpn);
-        for (index, area) in self.areas.iter_mut().enumerate() {
-            if area.vpn_range == range {
-                area.unmap(&mut self.page_table);
-                self.areas.remove(index);
-                return ((end_vpn.0 - start_vpn.0) * PAGE_SIZE) as isize;
-            }
+        if let Some((idx, area)) = self
+            .areas
+            .iter_mut()
+            .enumerate()
+            .find(|(_, area)| area.vpn_range == range)
+        {
+            area.unmap(&mut self.page_table);
+            self.areas.remove(idx);
+            ((end_vpn.0 - start_vpn.0) * PAGE_SIZE) as isize
+        } else {
+            -1
         }
-        -1
     }
 
     /// Mention that trampoline is not collected by areas.
@@ -233,6 +254,26 @@ impl MemorySet {
         )
     }
 
+    pub fn from_existed_user(user_space: &MemorySet) -> MemorySet {
+        let mut memory_set = Self::new_bare();
+        // map trampoline
+        memory_set.map_trampoline();
+        // copy data sections/trap_context/user_stack
+        for area in user_space.areas.iter() {
+            let new_area = MapArea::from_another(area);
+            memory_set.push(new_area, None);
+            // copy data from another space
+            for vpn in area.vpn_range {
+                let src_ppn = user_space.translate(vpn).unwrap().ppn();
+                let dst_ppn = memory_set.translate(vpn).unwrap().ppn();
+                dst_ppn
+                    .get_bytes_array()
+                    .copy_from_slice(src_ppn.get_bytes_array());
+            }
+        }
+        memory_set
+    }
+
     pub fn activate(&self) {
         let satp = self.page_table.token();
         unsafe {
@@ -243,6 +284,11 @@ impl MemorySet {
 
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.page_table.translate(vpn)
+    }
+
+    pub fn recycle_data_pages(&mut self) {
+        //*self = Self::new_bare();
+        self.areas.clear();
     }
 
     pub fn check_buf(&self, addr: usize, len: usize) -> bool {
@@ -276,6 +322,15 @@ impl MapArea {
             data_frames: BTreeMap::new(),
             map_type,
             map_perm,
+        }
+    }
+
+    pub fn from_another(another: &MapArea) -> Self {
+        Self {
+            vpn_range: VPNRange::new(another.vpn_range.get_start(), another.vpn_range.get_end()),
+            data_frames: BTreeMap::new(),
+            map_type: another.map_type,
+            map_perm: another.map_perm,
         }
     }
 
@@ -367,9 +422,8 @@ bitflags! {
     }
 }
 
-#[allow(unused)]
 pub fn remap_test() {
-    let mut kernel_space = KERNEL_SPACE.lock();
+    let kernel_space = KERNEL_SPACE.lock();
     let mid_text: VirtAddr = ((stext as usize + etext as usize) / 2).into();
     let mid_rodata: VirtAddr = ((srodata as usize + erodata as usize) / 2).into();
     let mid_data: VirtAddr = ((sdata as usize + edata as usize) / 2).into();
@@ -397,5 +451,5 @@ pub fn remap_test() {
             .executable(),
         false,
     );
-    info!("remap_test passed!");
+    debug!("remap_test passed!");
 }

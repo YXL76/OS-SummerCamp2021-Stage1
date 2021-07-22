@@ -1,8 +1,8 @@
-pub const USER_STACK_SIZE: usize = 4096;
+pub const USER_STACK_SIZE: usize = 4096 * 2;
 
 pub const KERNEL_STACK_SIZE: usize = 4096 * 2;
 
-pub const KERNEL_HEAP_SIZE: usize = 0x30_0000;
+pub const KERNEL_HEAP_SIZE: usize = 0x20_0000;
 
 pub const MEMORY_END: usize = 0x80800000;
 
@@ -19,10 +19,3 @@ pub const CLOCK_FREQ: usize = 12500000;
 pub const BIG_STRIDE: isize = isize::MAX;
 
 pub const DEFAULT_PRIO: isize = 16;
-
-/// Return (bottom, top) of a kernel stack in kernel space.
-pub fn kernel_stack_position(app_id: usize) -> (usize, usize) {
-    let top = TRAMPOLINE - app_id * (KERNEL_STACK_SIZE + PAGE_SIZE);
-    let bottom = top - KERNEL_STACK_SIZE;
-    (bottom, top)
-}

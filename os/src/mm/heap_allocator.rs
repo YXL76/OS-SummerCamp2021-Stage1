@@ -19,7 +19,6 @@ pub fn init_heap() {
     }
 }
 
-#[allow(unused)]
 pub fn heap_test() {
     use alloc::boxed::Box;
     use alloc::vec::Vec;
@@ -41,5 +40,5 @@ pub fn heap_test() {
     }
     assert!(bss_range.contains(&(v.as_ptr() as usize)));
     drop(v);
-    println!("heap_test passed!");
+    debug!("heap_test passed!");
 }
