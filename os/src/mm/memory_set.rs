@@ -52,11 +52,15 @@ impl MemorySet {
         start_va: VirtAddr,
         end_va: VirtAddr,
         permission: MapPermission,
-    ) -> bool {
-        self.push(
-            MapArea::new(start_va, end_va, MapType::Framed, permission),
-            None,
-        )
+    ) -> isize {
+        let map_area = MapArea::new(start_va, end_va, MapType::Framed, permission);
+        let start_vpn = map_area.vpn_range.get_start();
+        let end_vpn = map_area.vpn_range.get_end();
+        if self.push(map_area, None) {
+            ((end_vpn.0 - start_vpn.0) * PAGE_SIZE) as isize
+        } else {
+            -1
+        }
     }
 
     fn push(&mut self, mut map_area: MapArea, data: Option<&[u8]>) -> bool {
@@ -71,16 +75,18 @@ impl MemorySet {
         }
     }
 
-    pub fn remove_framed_area(&mut self, start_va: VirtAddr, end_va: VirtAddr) -> bool {
-        let range = VPNRange::new(start_va.floor(), end_va.ceil());
+    pub fn remove_framed_area(&mut self, start_va: VirtAddr, end_va: VirtAddr) -> isize {
+        let start_vpn = start_va.floor();
+        let end_vpn = end_va.ceil();
+        let range = VPNRange::new(start_vpn, end_vpn);
         for (index, area) in self.areas.iter_mut().enumerate() {
             if area.vpn_range == range {
                 area.unmap(&mut self.page_table);
                 self.areas.remove(index);
-                return true;
+                return ((end_vpn.0 - start_vpn.0) * PAGE_SIZE) as isize;
             }
         }
-        false
+        -1
     }
 
     /// Mention that trampoline is not collected by areas.

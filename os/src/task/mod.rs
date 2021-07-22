@@ -121,15 +121,11 @@ impl TaskManager {
         }
         let mut inner = self.inner.borrow_mut();
         let current = inner.current_task;
-        if inner.tasks[current].memory_set.insert_framed_area(
+        inner.tasks[current].memory_set.insert_framed_area(
             start.into(),
             (start + len).into(),
             MapPermission::from_bits((port << 1) as u8).unwrap() | MapPermission::U,
-        ) {
-            ((len - 1 + 4096) / 4096 * 4096) as isize
-        } else {
-            -1
-        }
+        )
     }
 
     fn munmap(&self, start: usize, len: usize) -> isize {
@@ -138,14 +134,9 @@ impl TaskManager {
         }
         let mut inner = self.inner.borrow_mut();
         let current = inner.current_task;
-        if inner.tasks[current]
+        inner.tasks[current]
             .memory_set
             .remove_framed_area(start.into(), (start + len).into())
-        {
-            ((len - 1 + 4096) / 4096 * 4096) as isize
-        } else {
-            -1
-        }
     }
 
     fn check_buf(&self, addr: usize, len: usize) -> bool {
