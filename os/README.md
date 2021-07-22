@@ -23,3 +23,10 @@ make run LOG=TRACE CHAPTER=3_2
 git checkout ch4
 make run LOG=TRACE
 ```
+
+## Lab5
+
+```shell
+git checkout ch5
+make run LOG=TRACE
+```
