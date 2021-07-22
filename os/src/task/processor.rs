@@ -6,7 +6,7 @@ use crate::trap::TrapContext;
 use alloc::sync::Arc;
 use core::borrow::BorrowMut;
 use core::cell::RefCell;
-use lazy_static::*;
+use lazy_static::lazy_static;
 
 pub struct Processor {
     inner: RefCell<ProcessorInner>,
@@ -42,7 +42,7 @@ impl Processor {
                 let mut task_inner = task.acquire_inner_lock();
                 let next_task_cx_ptr2 = task_inner.get_task_cx_ptr2();
                 task_inner.task_status = TaskStatus::Running;
-                task_inner.task_stride += task_inner.task_pass;
+                task_inner.add_task_stride();
                 drop(task_inner);
                 // release
                 self.inner.borrow_mut().current = Some(task);
@@ -103,7 +103,7 @@ pub fn set_priority(prio: isize) -> isize {
         .unwrap()
         .borrow_mut()
         .acquire_inner_lock()
-        .set_task_pass(prio);
+        .set_task_pass(prio as usize);
     prio
 }
 

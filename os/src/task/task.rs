@@ -20,8 +20,8 @@ pub struct TaskControlBlockInner {
     pub base_size: usize,
     pub task_cx_ptr: usize,
     pub task_status: TaskStatus,
-    pub task_pass: isize,
-    pub task_stride: isize,
+    task_pass: usize,
+    task_stride: usize,
     pub memory_set: MemorySet,
     pub parent: Option<Weak<TaskControlBlock>>,
     pub children: Vec<Arc<TaskControlBlock>>,
@@ -49,9 +49,12 @@ impl TaskControlBlockInner {
         self.get_status() == TaskStatus::Zombie
     }
 
-    #[allow(unused)]
-    pub fn set_task_pass(&mut self, prio: isize) {
+    pub fn set_task_pass(&mut self, prio: usize) {
         self.task_pass = BIG_STRIDE / prio;
+    }
+
+    pub fn add_task_stride(&mut self) {
+        self.task_stride += self.task_pass;
     }
 
     pub fn check_buf(&self, addr: usize, len: usize) -> bool {
@@ -221,8 +224,32 @@ impl TaskControlBlock {
         // ---- release parent PCB lock
     }
 
+    fn get_task_stride(&self) -> usize {
+        self.acquire_inner_lock().task_stride
+    }
+
     pub fn getpid(&self) -> usize {
         self.pid.0
+    }
+}
+
+impl Eq for TaskControlBlock {}
+
+impl PartialEq for TaskControlBlock {
+    fn eq(&self, other: &Self) -> bool {
+        self.get_task_stride() == other.get_task_stride()
+    }
+}
+
+impl PartialOrd for TaskControlBlock {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for TaskControlBlock {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        self.get_task_stride().cmp(&other.get_task_stride())
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE};
 use crate::mm::{MapPermission, VirtAddr, KERNEL_SPACE};
 use alloc::vec::Vec;
-use lazy_static::*;
+use lazy_static::lazy_static;
 use spin::Mutex;
 
 struct PidAllocator {

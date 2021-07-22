@@ -1,4 +1,3 @@
-use crate::config::BIG_STRIDE;
 use crate::loader::get_app_data_by_name;
 use crate::mm::{translated_refmut, translated_str};
 use crate::task::{
@@ -28,7 +27,7 @@ pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
 }
 
 pub fn sys_set_priority(prio: isize) -> isize {
-    if prio >= 2 && prio <= BIG_STRIDE {
+    if prio >= 2 {
         set_priority(prio)
     } else {
         -1

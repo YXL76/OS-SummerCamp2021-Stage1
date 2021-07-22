@@ -1,27 +1,28 @@
 use super::TaskControlBlock;
-use alloc::collections::VecDeque;
+use alloc::collections::BinaryHeap;
 use alloc::sync::Arc;
-use lazy_static::*;
+use core::cmp::Reverse;
+use lazy_static::lazy_static;
 use spin::Mutex;
 
 pub struct TaskManager {
-    ready_queue: VecDeque<Arc<TaskControlBlock>>,
+    ready_queue: BinaryHeap<Reverse<Arc<TaskControlBlock>>>,
 }
 
 /// A simple FIFO scheduler.
 impl TaskManager {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
-            ready_queue: VecDeque::new(),
+            ready_queue: BinaryHeap::new(),
         }
     }
 
-    pub fn add(&mut self, task: Arc<TaskControlBlock>) {
-        self.ready_queue.push_back(task);
+    fn add(&mut self, task: Arc<TaskControlBlock>) {
+        self.ready_queue.push(Reverse(task));
     }
 
-    pub fn fetch(&mut self) -> Option<Arc<TaskControlBlock>> {
-        self.ready_queue.pop_front()
+    fn fetch(&mut self) -> Option<Arc<TaskControlBlock>> {
+        self.ready_queue.pop().map(|Reverse(task)| task)
     }
 }
 
