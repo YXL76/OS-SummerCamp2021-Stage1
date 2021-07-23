@@ -16,6 +16,6 @@ pub const TRAP_CONTEXT: usize = TRAMPOLINE - PAGE_SIZE;
 
 pub const CLOCK_FREQ: usize = 12500000;
 
-pub const BIG_STRIDE: usize = isize::MAX as usize + 1;
+pub const BIG_STRIDE: usize = isize::MAX as usize;
 
 pub const DEFAULT_PRIO: usize = 16;

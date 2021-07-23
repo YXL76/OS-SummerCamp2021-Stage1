@@ -13,6 +13,7 @@ extern crate log;
 #[macro_use]
 mod console;
 mod config;
+mod fs;
 mod lang_items;
 mod loader;
 mod mm;
