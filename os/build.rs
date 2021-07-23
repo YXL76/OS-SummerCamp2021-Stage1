@@ -24,6 +24,7 @@ fn insert_app_data() -> Result<()> {
                 || name_with_ext.starts_with("ch3_0_")
                 || name_with_ext.starts_with("ch4_")
                 || name_with_ext.starts_with("ch5_")
+                || name_with_ext.starts_with("ch6_")
         })
         .collect();
     apps.push(String::from("initproc"));

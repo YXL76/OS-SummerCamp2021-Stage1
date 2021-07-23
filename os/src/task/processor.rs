@@ -134,10 +134,3 @@ pub fn munmap(start: usize, len: usize) -> isize {
         .memory_set
         .remove_framed_area(start.into(), (start + len).into())
 }
-
-pub fn check_buf(addr: usize, len: usize) -> bool {
-    current_task()
-        .unwrap()
-        .acquire_inner_lock()
-        .check_buf(addr, len)
-}
