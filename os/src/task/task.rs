@@ -247,9 +247,11 @@ impl PartialOrd for TaskControlBlock {
     }
 }
 
+static ZERO: isize = 0;
+
 impl Ord for TaskControlBlock {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        self.get_task_stride().cmp(&other.get_task_stride())
+        ((self.get_task_stride() - &other.get_task_stride()) as isize).cmp(&ZERO)
     }
 }
 
