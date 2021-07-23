@@ -85,9 +85,12 @@ impl TaskManager {
 
     fn find_next_task(&self) -> Option<usize> {
         let inner = self.inner.borrow();
+        let zero = 0isize;
         (0..self.num_app)
             .filter(|&id| inner.tasks[id].task_status == TaskStatus::Ready)
-            .min_by_key(|&id| inner.tasks[id].task_stride)
+            .min_by(|&x, &y| {
+                ((inner.tasks[x].task_stride - inner.tasks[y].task_stride) as isize).cmp(&zero)
+            })
     }
 
     fn run_next_task(&self) {
@@ -109,11 +112,11 @@ impl TaskManager {
         }
     }
 
-    fn set_priority(&self, prio: isize) -> isize {
+    fn set_priority(&self, prio: usize) -> isize {
         let mut inner = self.inner.borrow_mut();
         let current = inner.current_task;
         inner.tasks[current].set_task_pass(prio);
-        prio
+        prio as isize
     }
 }
 pub fn current_task() -> usize {
@@ -136,7 +139,7 @@ fn mark_current_exited() {
 }
 
 pub fn set_priority(prio: isize) -> isize {
-    TASK_MANAGER.set_priority(prio)
+    TASK_MANAGER.set_priority(prio as usize)
 }
 
 pub fn suspend_current_and_run_next() {

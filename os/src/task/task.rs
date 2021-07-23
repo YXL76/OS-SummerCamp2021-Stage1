@@ -4,8 +4,8 @@ use crate::config::BIG_STRIDE;
 pub struct TaskControlBlock {
     pub task_cx_ptr: usize,
     pub task_status: TaskStatus,
-    pub task_pass: isize,
-    pub task_stride: isize,
+    pub task_pass: usize,
+    pub task_stride: usize,
     pub task_lastrun: usize,
     pub task_duration: usize,
 }
@@ -15,7 +15,7 @@ impl TaskControlBlock {
         &self.task_cx_ptr as *const usize
     }
 
-    pub fn set_task_pass(&mut self, prio: isize) {
+    pub fn set_task_pass(&mut self, prio: usize) {
         self.task_pass = BIG_STRIDE / prio;
     }
 }

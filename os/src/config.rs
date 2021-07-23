@@ -10,6 +10,6 @@ pub const APP_SIZE_LIMIT: usize = 0x20000;
 
 pub const CLOCK_FREQ: usize = 12500000;
 
-pub const BIG_STRIDE: isize = isize::MAX;
+pub const BIG_STRIDE: usize = isize::MAX as usize;
 
-pub const DEFAULT_PRIO: isize = 16;
+pub const DEFAULT_PRIO: usize = 16;
