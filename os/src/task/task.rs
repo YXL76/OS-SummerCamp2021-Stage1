@@ -6,8 +6,8 @@ use crate::trap::{trap_handler, TrapContext};
 pub struct TaskControlBlock {
     pub task_cx_ptr: usize,
     pub task_status: TaskStatus,
-    pub task_pass: isize,
-    pub task_stride: isize,
+    pub task_pass: usize,
+    pub task_stride: usize,
     pub memory_set: MemorySet,
     pub trap_cx_ppn: PhysPageNum,
     pub base_size: usize,
@@ -26,7 +26,7 @@ impl TaskControlBlock {
         self.memory_set.token()
     }
 
-    pub fn set_task_pass(&mut self, prio: isize) {
+    pub fn set_task_pass(&mut self, prio: usize) {
         self.task_pass = BIG_STRIDE / prio;
     }
 

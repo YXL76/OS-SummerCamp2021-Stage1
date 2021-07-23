@@ -1,4 +1,3 @@
-use crate::config::BIG_STRIDE;
 use crate::mm::translated_byte_buffer;
 use crate::task::{
     current_user_token, exit_current_and_run_next, set_priority, suspend_current_and_run_next,
@@ -28,7 +27,7 @@ pub fn sys_get_time(ts: *const u8, _tz: usize) -> isize {
 }
 
 pub fn sys_set_priority(prio: isize) -> isize {
-    if prio >= 2 && prio <= BIG_STRIDE {
+    if prio >= 2 {
         set_priority(prio)
     } else {
         -1
