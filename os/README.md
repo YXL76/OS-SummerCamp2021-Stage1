@@ -1,8 +1,8 @@
 # OS
 
-## Lab5
+## Lab6
 
 ```shell
-git checkout ch5
+git checkout ch6
 make run LOG=TRACE
 ```
