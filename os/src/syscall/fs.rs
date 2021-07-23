@@ -1,6 +1,6 @@
 use crate::fs::make_pipe;
 use crate::mm::{translated_byte_buffer, translated_refmut, UserBuffer};
-use crate::task::current_task;
+use crate::task::{current_task, TASK_MANAGER};
 
 pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
     let task = current_task().unwrap();
@@ -22,7 +22,7 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
 pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
-    if fd >= inner.fd_table.len() {
+    if !inner.check_buf(buf as usize, len) || fd >= inner.fd_table.len() {
         return -1;
     }
     let token = inner.get_user_token();
@@ -59,4 +59,44 @@ pub fn sys_pipe(pipe: *mut usize) -> isize {
     *translated_refmut(token, pipe) = read_fd;
     *translated_refmut(token, unsafe { pipe.add(1) }) = write_fd;
     0
+}
+
+pub fn sys_mail_read(buf: *mut u8, len: usize) -> isize {
+    let task = current_task().unwrap();
+    let mut inner = task.acquire_inner_lock();
+    if !inner.check_buf(buf as usize, len) {
+        return -1;
+    }
+    let token = inner.get_user_token();
+    inner.mailbox.read(
+        UserBuffer::new(translated_byte_buffer(token, buf, len)),
+        len,
+    )
+}
+
+pub fn sys_mail_write(pid: usize, buf: *mut u8, len: usize) -> isize {
+    let len = len.min(256);
+    let current = current_task().unwrap();
+    let mut inner = current.acquire_inner_lock();
+    if !inner.check_buf(buf as usize, len) {
+        return -1;
+    }
+    let token = inner.get_user_token();
+    let sender = current.getpid();
+    if sender == pid {
+        inner.mailbox.write(
+            sender,
+            UserBuffer::new(translated_byte_buffer(token, buf, len)),
+            len,
+        )
+    } else if let Some(task) = TASK_MANAGER.lock().find(pid) {
+        let mut inner = task.acquire_inner_lock();
+        inner.mailbox.write(
+            sender,
+            UserBuffer::new(translated_byte_buffer(token, buf, len)),
+            len,
+        )
+    } else {
+        -1
+    }
 }

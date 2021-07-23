@@ -24,6 +24,13 @@ impl TaskManager {
     fn fetch(&mut self) -> Option<Arc<TaskControlBlock>> {
         self.ready_queue.pop().map(|Reverse(task)| task)
     }
+
+    pub fn find(&self, pid: usize) -> Option<&'_ Arc<TaskControlBlock>> {
+        self.ready_queue
+            .iter()
+            .find(|x| x.0.getpid() == pid)
+            .map(|Reverse(task)| task)
+    }
 }
 
 lazy_static! {

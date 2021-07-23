@@ -13,7 +13,7 @@ use switch::__switch;
 use task::{TaskControlBlock, TaskStatus};
 
 pub use context::TaskContext;
-pub use manager::add_task;
+pub use manager::{add_task, TASK_MANAGER};
 pub use pid::{pid_alloc, KernelStack, PidHandle};
 pub use processor::{
     current_task, current_trap_cx, current_user_token, mmap, munmap, run_tasks, schedule,
