@@ -19,3 +19,5 @@ pub const CLOCK_FREQ: usize = 12500000;
 pub const BIG_STRIDE: usize = isize::MAX as usize;
 
 pub const DEFAULT_PRIO: usize = 16;
+
+pub const MMIO: &[(usize, usize)] = &[(0x10001000, 0x1000)];

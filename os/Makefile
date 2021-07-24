@@ -4,6 +4,9 @@ MODE := release
 KERNEL_ELF := target/$(TARGET)/$(MODE)/os
 KERNEL_BIN := $(KERNEL_ELF).bin
 DISASM_TMP := target/$(TARGET)/$(MODE)/asm
+FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
+SDCARD := /dev/sdb
+APPS := ../user/src/bin/*
 
 # BOARD
 BOARD ?= qemu
@@ -29,8 +32,8 @@ OBJCOPY := rust-objcopy --binary-architecture=riscv64
 # Disassembly
 DISASM ?= -x
 
-# build: env $(KERNEL_BIN)
-build: $(KERNEL_BIN)
+# build: env $(KERNEL_BIN) $(FS_IMG)
+build: $(KERNEL_BIN) $(FS_IMG)
 
 env:
 	(rustup target list | grep "riscv64gc-unknown-none-elf (installed)") || rustup target add $(TARGET)
@@ -41,8 +44,13 @@ env:
 $(KERNEL_BIN): kernel
 	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@
 
+$(FS_IMG): $(APPS)
+	@cd ../user && make all CHAPTER=7
+	@cd ../easy-fs-fuse && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
+
+$(APPS):
+
 kernel:
-	@cd ../user && make all CHAPTER=6
 	@echo Platform: $(BOARD)
 	@cp src/linker-$(BOARD).ld src/linker.ld
 	@cargo build --release
@@ -67,7 +75,9 @@ ifeq ($(BOARD),qemu)
 		-machine virt \
 		-nographic \
 		-bios $(BOOTLOADER) \
-		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA)
+		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
+		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
+		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 else
 	(which $(K210-BURNER)) || (cd .. && git clone https://github.com/sipeed/kflash.py.git && mv kflash.py tools)
 	@cp $(BOOTLOADER) $(BOOTLOADER).copy
