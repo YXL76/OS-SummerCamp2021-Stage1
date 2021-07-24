@@ -23,7 +23,7 @@ _2_bad_
 
    1. L40：刚进入 `__restore` 时，`a0` 代表了什么值。请指出 `__restore` 的两种使用情景。
 
-      **答**：内核栈栈顶。
+      **答**：内核栈栈顶。使用情景：① 恢复 Trap 上下文，② CPU 特权级降级。
 
    2. L46-L51：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。
 
@@ -31,7 +31,7 @@ _2_bad_
 
    3. L53-L59：为何跳过了 `x2` 和 `x4`？
 
-      **答**：`x2` 为 `sp`（`Stack pointer`），`x4` 为 `tp`（`Thread pointer`）。
+      **答**：`x2` 为 `sp`（`Stack pointer`），`x4` 为 `tp`（`Thread pointer`）。`x4` 没有使用，`x2` 之后会更改。
 
    4. L63：该指令之后，`sp` 和 `sscratch` 中的值分别有什么意义？
 
@@ -51,7 +51,38 @@ _2_bad_
 
 3. 程序陷入内核的原因有中断和异常（系统调用），请问 riscv64 支持哪些中断/异常？如何判断进入内核是由于中断还是异常？描述陷入内核时的几个重要寄存器及其值。
 
-   **答**：支持的中断/异常：InstructionMisaligned，InstructionFault，IllegalInstruction，Breakpoint，LoadFault，StoreMisaligned，StoreFault，UserEnvCall，VirtualSupervisorEnvCall，InstructionPageFault，LoadPageFault，StorePageFault，InstructionGuestPageFault，LoadGuestPageFault，VirtualInstruction，StoreGuestPageFault，Unknown。
+   **答**：支持的中断/异常：
+
+   | Interrupt | Exception Code | Description                    |
+   | --------: | -------------: | :----------------------------- |
+   |         1 |              0 | _Reserved_                     |
+   |         1 |              1 | Supervisor software interrupt  |
+   |         1 |            2–4 | _Reserved_                     |
+   |         1 |              5 | Supervisor timer interrupt     |
+   |         1 |            6–8 | _Reserved_                     |
+   |         1 |              9 | Supervisor external interrupt  |
+   |         1 |          10–15 | _Reserved_                     |
+   |         1 |            ≥16 | _Designated for platform use_  |
+   |         0 |              0 | Instruction address misaligned |
+   |         0 |              1 | Instruction access fault       |
+   |         0 |              2 | Illegal instruction            |
+   |         0 |              3 | Breakpoint                     |
+   |         0 |              4 | Load address misaligned        |
+   |         0 |              5 | Load access fault              |
+   |         0 |              6 | Store/AMO address misaligned   |
+   |         0 |              7 | Store/AMO access fault         |
+   |         0 |              8 | Environment call from U-mode   |
+   |         0 |              9 | Environment call from S-mode   |
+   |         0 |          10–11 | _Reserved_                     |
+   |         0 |             12 | Instruction page fault         |
+   |         0 |             13 | Load page fault                |
+   |         0 |             14 | _Reserved_                     |
+   |         0 |             15 | Store/AMO page fault           |
+   |         0 |          16–23 | _Reserved_                     |
+   |         0 |          24–31 | _Designated for custom use_    |
+   |         0 |          32–47 | _Reserved_                     |
+   |         0 |          48–63 | _Designated for custom use_    |
+   |         0 |            ≥64 | _Reserved_                     |
 
    | CSR 名  |                      该 CSR 与 Trap 相关的功能                       |
    | :-----: | :------------------------------------------------------------------: |
