@@ -1,0 +1,11 @@
+[package]
+name = "easy-fs-fuse"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+easy-fs = { path = "../easy-fs" }
+clap = "2.33"
+rand = "0.8"
