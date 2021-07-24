@@ -399,9 +399,10 @@ impl DirEntry {
         }
     }
 
+    #[allow(unused_must_use)]
     pub fn new(name: &str, inode_number: u32) -> Self {
         let mut bytes = [0u8; NAME_LENGTH_LIMIT + 1];
-        (&mut bytes[..name.len()]).copy_from_slice(name.as_bytes());
+        &mut bytes[..name.len()].copy_from_slice(name.as_bytes());
         Self {
             name: bytes,
             inode_number,

@@ -45,7 +45,6 @@ pub fn rust_main() -> ! {
     mm::frame_allocator_test();
     mm::heap_test();
     mm::remap_test();
-    drivers::block_device_test();
     trap::init();
     trap::enable_timer_interrupt();
     timer::set_next_trigger();
